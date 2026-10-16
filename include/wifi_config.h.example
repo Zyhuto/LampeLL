@@ -1,0 +1,9 @@
+#pragma once
+
+// Kopiere diese Datei nach wifi_config.h und trage die Zugangsdaten ein.
+namespace WifiConfig {
+
+constexpr char SSID[] = "DEIN_HOTSPOT_NAME";
+constexpr char PASSWORD[] = "DEIN_HOTSPOT_PASSWORT";
+
+}
