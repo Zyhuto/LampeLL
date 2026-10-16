@@ -1,15 +1,20 @@
 #include <Arduino.h>
+#include "led_strip.h"
 #include "rfid.h"
+#include "serial_interface.h"
 
 void setup() {
-    Serial.begin(115200);
+    AppSerial::serial.begin();
     delay(1000);
 
-    Serial.println("ESP32 gestartet!");
+    AppSerial::serial.println("ESP32 gestartet!");
 
+    LedStrip::begin();
     Rfid::begin();
 }
 
 void loop() {
-    Rfid::poll();
+    if (Rfid::poll()) {
+        LedStrip::toggle();
+    }
 }

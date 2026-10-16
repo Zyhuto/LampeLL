@@ -3,6 +3,6 @@
 namespace Rfid {
 
 void begin();
-void poll();
+bool poll();
 
 }

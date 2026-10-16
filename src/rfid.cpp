@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <MFRC522.h>
+#include "serial_interface.h"
 
 namespace {
 
@@ -22,38 +23,39 @@ void begin() {
     SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, SS_PIN);
     reader.PCD_Init();
 
-    Serial.println("RFID-Modul bereit.");
-    Serial.println("Bitte RFID-Karte auflegen...");
+    AppSerial::serial.println("RFID-Modul bereit.");
+    AppSerial::serial.println("Bitte RFID-Karte auflegen...");
 }
 
-void poll() {
+bool poll() {
     // Prüfen, ob eine neue Karte vorhanden ist
     if (!reader.PICC_IsNewCardPresent()) {
-        return;
+        return false;
     }
 
     // Kartendaten lesen
     if (!reader.PICC_ReadCardSerial()) {
-        return;
+        return false;
     }
 
-    Serial.print("RFID erkannt! UID: ");
+    AppSerial::serial.print("RFID erkannt! UID: ");
 
     for (byte i = 0; i < reader.uid.size; i++) {
         if (reader.uid.uidByte[i] < 0x10) {
-            Serial.print("0");
+            AppSerial::serial.print("0");
         }
 
-        Serial.print(reader.uid.uidByte[i], HEX);
-        Serial.print(" ");
+        AppSerial::serial.print(reader.uid.uidByte[i], HEX);
+        AppSerial::serial.print(" ");
     }
 
-    Serial.println();
+    AppSerial::serial.println();
 
     reader.PICC_HaltA();
     reader.PCD_StopCrypto1();
 
     delay(500);
+    return true;
 }
 
 }
