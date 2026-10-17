@@ -1,50 +1,43 @@
 #include "serial_interface.h"
 
-#include <BluetoothSerial.h>
 #include <cstdarg>
 #include <cstdio>
-
-namespace {
-
-BluetoothSerial bluetoothSerial;
-
-bool useUsb() {
-    return AppSerial::OUTPUT_MODE == AppSerial::OutputMode::Usb ||
-           AppSerial::OUTPUT_MODE == AppSerial::OutputMode::UsbAndBluetooth;
-}
-
-bool useBluetooth() {
-    return AppSerial::OUTPUT_MODE == AppSerial::OutputMode::Bluetooth ||
-           AppSerial::OUTPUT_MODE == AppSerial::OutputMode::UsbAndBluetooth;
-}
-
-}
 
 namespace AppSerial {
 
 Interface serial;
 
-void Interface::begin() {
-    if (useUsb()) {
-        ::Serial.begin(USB_BAUDRATE);
+Interface::Interface() = default;
+
+void Interface::add(OutputChannel &channel) {
+    if (firstChannel == nullptr) {
+        firstChannel = &channel;
+        return;
     }
 
-    if (useBluetooth()) {
-        bluetoothSerial.begin(BLUETOOTH_NAME);
+    OutputChannel *lastChannel = firstChannel;
+    while (lastChannel->nextChannel() != nullptr) {
+        lastChannel = lastChannel->nextChannel();
+    }
+
+    lastChannel->next = &channel;
+}
+
+void Interface::begin() {
+    for (OutputChannel *channel = firstChannel; channel != nullptr;
+         channel = channel->nextChannel()) {
+        channel->begin();
     }
 }
 
 size_t Interface::write(uint8_t value) {
     size_t written = 0;
 
-    if (useUsb()) {
-        written = ::Serial.write(value);
-    }
-
-    if (useBluetooth()) {
-        bluetoothSerial.write(value);
-        if (!useUsb()) {
-            written = 1;
+    for (OutputChannel *channel = firstChannel; channel != nullptr;
+         channel = channel->nextChannel()) {
+        const size_t channelWritten = channel->write(value);
+        if (channelWritten > written) {
+            written = channelWritten;
         }
     }
 
